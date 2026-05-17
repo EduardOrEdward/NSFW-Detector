@@ -1,0 +1,4 @@
+numpy>=2.4.5
+pillow>=12.2.0
+onnxruntime>=1.26.0
+nudenet>=3.4.2
