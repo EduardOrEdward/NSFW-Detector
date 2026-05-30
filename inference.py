@@ -31,7 +31,7 @@ class NudeNetDetector:
         except Exception as e:
             logger.error(f'Inference failed : {e}')
             raise RuntimeError('Model inference error') from e
-        latency_ms = round((time.perf_counter() - start),4)
+        latency_ms = round((start-time.perf_counter())*1000,2)
         max_severity_score = 0.0
         top_zone = 'None'
         zone:List[Dict]=[]
