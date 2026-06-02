@@ -42,7 +42,7 @@ class VitClassifier(BaseDetector):
             pixel_values = inputs['pixel_values'].astype(np.float32)
             #Inference...
             
-            outputs = self._session.run(None,{self._input_name:pixel_values})
+            outputs = np.array(self._session.run(None,{self._input_name:pixel_values}))
             logits = outputs[0][0] #shape/types -> [hentai,draw,neutral,porn,sexy(ZESTYY *sonic gif*)]
             shifted = logits - np.max(logits)
             probs = np.exp(shifted)/np.sum(np.exp(shifted))
