@@ -1,17 +1,26 @@
-import sys, time
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent))
-
+import asyncio
 from vit_detector import VitClassifier
+from nudenet_detector import NudeNetDetector
+from hybrid import HybridDetector
 
-detector = VitClassifier("data/models/vit/quantized_model.onnx")
+async def main():
+    nudenet = NudeNetDetector(model_path="data/models/nudenet/nudenet.onnx")
+    vit = VitClassifier(model_path="data/models/vit/quantized_model.onnx")
+    
+    hybrid = HybridDetector(
+        detectors=[nudenet, vit],
+        strategy="voting",  # или "weighted", "voting"
+        weights={"nudenet_detector": 0.4, "vit_classifier": 0.6}
+    )
+    
+    with open("test_images/xv_p.jpg", "rb") as f:
+        result = await hybrid.predict(f.read(), threshold=0.5)
+        
+    print(f"✅ Hybrid → score: {result['score']}, label: {result['label']}")
+    print(f"   latency: {result['latency_ms']} ms")
+    print(f"   sources: {result['meta']['sources']}")
+    print(f"   zones: {len(result['meta']['detected_zones'])} found")
+    print(f'Errors: {result['meta']['errors']}')
 
-# Подставьте путь к любому изображению
-with open("app/xv_p.jpg", "rb") as f:
-    result = detector.predict(f.read(), threshold=0.5)
-
-print("✅ ViT result:")
-print(f"  score: {result['score']} | label: {result['label']}")
-print(f"  latency: {result['latency_ms']} ms")
-print(f"  probs: {result['meta']['probabilities']}")
-print(f' meta : {result['meta']}')
+if __name__ == "__main__":
+    asyncio.run(main())

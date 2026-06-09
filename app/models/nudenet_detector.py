@@ -35,6 +35,8 @@ class NudeNetDetector(BaseDetector):
             img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
             img_array = np.array(img)
             detections = self._detector.detect(img_array)
+            if not detections:
+                detections=[]
         except Exception as e:
             logger.error(f'NudeNet infrence failed: {e} ',exc_info=True)
             raise RuntimeError('Nudenet model failed to load: ') from e

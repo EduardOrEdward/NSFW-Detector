@@ -1,15 +1,14 @@
 import asyncio
 import logging
-import time
 from typing import Dict, Any, List, Literal
-from base import BaseDetector
+from models.base import BaseDetector
 
 logger = logging.getLogger(__name__)
 
-class HybridDetection(BaseDetector):
+class HybridDetector(BaseDetector):
     def __init__(self,
                  detectors:List[BaseDetector],
-                 strategy:Literal['max','weighted','voting']='max',
+                 strategy:Literal['max','weighted','voting']='weighted',
                  weights: Dict[str,float]|None=None,
                  fallback_detector: BaseDetector|None = None):
         self.detectors = detectors
