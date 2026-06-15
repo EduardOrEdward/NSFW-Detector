@@ -66,4 +66,6 @@ async def readiness_check(request:Request):
         }
     else:
         return JSONResponse(status_code=503,content={'status':'not_ready','model_loaded':False})
-    
+
+from api.v1 import predict
+app.include_router(predict.router,prefix='/')
