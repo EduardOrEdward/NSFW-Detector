@@ -12,8 +12,8 @@ services:
     env_file:
       -'../.env'
     enviroment:
-      -'REDIS_URL=redis://redis:6379/0'
-      -'UNICORN_WORKERS=4'
+      - REDIS_URL=redis://redis:6379/0
+      - UNICORN_WORKERS=4
     depends_on:
       redis:
         condition: service_healthy
@@ -30,7 +30,7 @@ services:
   
 
   redis:
-    image: redis:7-alpha
+    image: redis:7-alpine
     conteiner_name: nsfw-redis
     restart: unless-stopped
     command: radis-server --appendoly yes --maxmemory 512mb --maxmemory-policy allkeys-lru

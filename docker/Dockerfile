@@ -24,8 +24,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN useradd --create-home --shell /bin/bash appuser && \
-    chown -R appuser:appuser /app
+RUN useradd --create-home --shell /bin/bash appuser && chown -R appuser:appuser /app
+    
 
 COPY --from=builder /install /install
 
@@ -40,7 +40,7 @@ COPY --chown=appuser:appuser data/models/. ./data/models/
 USER appuser
 
 HEALTHCHECK --interval=30s --timeout=40s --start-period=15s --retries=3 \
-    CMD python -c 'import urllib.request; urllib.request.urloop('https://localhost:8000/ready')' || exit 1
+    CMD python -c 'import urllib.request; urllib.request.urloop('https://localhost:8000/health/ready')' || exit 1
 
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--no-access-log"]
