@@ -9,11 +9,11 @@ async def main():
     
     hybrid = HybridDetector(
         detectors=[nudenet, vit],
-        strategy="voting",  # или "weighted", "voting"
-        weights={"nudenet_detector": 0.4, "vit_classifier": 0.6}
+        strategy="weighted",  # или "weighted", "voting"
+        weights={"nudenet_detector": 0.6, "vit_classifier": 0.4}
     )
     
-    with open("test_images/xv_p.jpg", "rb") as f:
+    with open("test_images/edge_art.jpg", "rb") as f:
         result = await hybrid.predict(f.read(), threshold=0.5)
         
     print(f"✅ Hybrid → score: {result['score']}, label: {result['label']}")

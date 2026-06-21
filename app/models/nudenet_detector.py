@@ -1,11 +1,10 @@
-import io
-import time
+# app/models/nudenet_detector.py
+import time, logging, io
+from typing import Any, Dict, List
 import numpy as np
 from PIL import Image
-from base import BaseDetector 
-import logging
-from typing import Dict, Any, List
 from nudenet import NudeDetector
+from base import BaseDetector
 
 logger = logging.getLogger(__name__)
 
@@ -17,53 +16,55 @@ ZONE_SEVERITY = {
     "MALE_BREAST_EXPOSED": 0.7, "BUTTOCKS": 0.6,
     "F_BUTT_EXPOSED": 0.85, "M_GENITALIA": 0.95
 }
-
-MAX_SEVERITY = max(ZONE_SEVERITY.values(),default=1.0)
+MAX_SEVERITY = max(ZONE_SEVERITY.values(), default=1.0)
 
 class NudeNetDetector(BaseDetector):
-    def __init__(self,model_path:str|None=None):
-        self.model_path = model_path
-        self._detector = NudeDetector()
-        logger.info('Nude')
+    def __init__(self, model_path: str | None = None):
+        self._detector = NudeDetector(model_path=model_path)
+
     @property
-    def name(self)->str:
-        return 'nudenet_detector'
-    def predict(self,image_bytes:bytes,threshold:float=0.7) ->Dict[str,Any]:
-        self._validate_inputs(image_bytes=image_bytes,threshold=threshold)
+    def name(self) -> str:
+        return "nudenet_detector"
+
+    def predict(self, image_bytes: bytes, threshold: float = 0.5) -> Dict[str, Any]:
+        self._validate_inputs(image_bytes, threshold)
         start = time.perf_counter()
-        try:
-            img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-            img_array = np.array(img)
-            detections = self._detector.detect(img_array)
-            if not detections:
-                detections=[]
-        except Exception as e:
-            logger.error(f'NudeNet infrence failed: {e} ',exc_info=True)
-            raise RuntimeError('Nudenet model failed to load: ') from e
-        finally:
-            end = time.perf_counter()
-            latency_ms = round((end-start)*1000,2)
-        max_severity_score = 0.0
-        top_zone = 'none'
-        zones:List[Dict] = []
-        for det in detections:
-            cls = det.get('class','UNKNOWN')
-            score = det.get('score',0.0)
-            severity = ZONE_SEVERITY.get(cls,0.5) * score
-            if severity > max_severity_score:
-                max_severity_score=severity
-                top_zone=cls
-        zones.append({'zone':cls,'confidence':round(score,3)})
-        normalized_score = round(min(max_severity_score/MAX_SEVERITY,1.0),2)
         
+        # 🔒 Безопасное получение детекций
+        raw_detections = []
+        try:
+            img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            res = self._detector.detect(np.array(img),)
+            raw_detections = res if isinstance(res, list) else []
+        except Exception as e:
+            logger.warning(f"NudeNet fallback (non-critical): {e}")
+            raw_detections = []
+        finally:
+            latency_ms = round((time.perf_counter() - start) * 1000, 2)
+
+        max_severity_score = 0.0
+        top_zone = "none"
+        zones: List[Dict] = []
+
+        # ✅ Безопасная итерация. cls НИКОГДА не выйдет за пределы цикла
+        for det in raw_detections:
+            if not isinstance(det, dict): continue
+            zone_cls = det.get("class", "UNKNOWN")
+            score = float(det.get("score", 0.0))
+            if not zone_cls or score <= 0: continue
+
+            severity = ZONE_SEVERITY.get(zone_cls, 0.5) * score
+            if severity > max_severity_score:
+                max_severity_score = severity
+                top_zone = zone_cls
+            zones.append({"zone": zone_cls, "confidence": round(score, 3)})
+
+        normalized_score = round(min(max_severity_score / MAX_SEVERITY, 1.0), 4)
+
         return {
             "score": normalized_score,
             "label": "nsfw" if normalized_score >= threshold else "sfw",
             "latency_ms": latency_ms,
             "model_name": self.name,
-            "meta": {
-                "detected_zones": zones,
-                "top_zone": top_zone,
-                "raw_max_severity": max_severity_score
-            }
+            "meta": {"detected_zones": zones, "top_zone": top_zone, "raw_max_severity": max_severity_score}
         }

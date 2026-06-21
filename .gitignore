@@ -7,7 +7,8 @@ __pycache__/
 *.so
 test_images
 test
-
+*/models/debug_vit.py
+*/models/test_vit.py
 # Distribution / packaging
 .Python
 build/

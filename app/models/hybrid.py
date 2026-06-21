@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from typing import Dict, Any, List, Literal
-from models.base import BaseDetector
+from base import BaseDetector
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -25,21 +26,27 @@ class HybridDetector(BaseDetector):
     @property
     def name(self) ->str:
         return 'hybrid_detector'
-    def _aggregate(self,results:List[Dict],threshold:float=0.5) -> float:
-        scores = [r['score'] for r in results]
-        names = [r['model_name'] for r in results]
-        if self.strategy == 'max':
-            return max(scores)
-        if self.strategy == 'weighted':
-            active_weights = [self.weights.get(n,0.0) for n in names]
-            weighted_sum = sum(scores)
-            if weighted_sum <= 0.0:
-                return max(scores)
-            return sum(s*w for s,w in zip(scores,active_weights))/ weighted_sum
-        if self.strategy == 'voting':
-            nsfw_count = sum(1 for s in scores if s>= threshold)
-            return nsfw_count/len(scores)
-        raise ValueError('Unknow strategy')
+    def _aggregate(self, results: List[Dict], threshold: float) -> float:
+        if not results:
+            return 0.0
+            
+        scores = {r["model_name"]: r["score"] for r in results}
+        logger.debug(f"Aggregating scores: {scores} | Strategy: {self.strategy}")
+
+        if self.strategy == "max":
+            return max(scores.values())
+            
+        if self.strategy == "weighted":
+            active_weights = [self.weights.get(n, 0.0) for n in scores.keys()]
+            w_sum = sum(active_weights)
+            if w_sum == 0: return max(scores.values())
+            return sum(s * w for s, w in zip(scores.values(), active_weights)) / w_sum
+            
+        if self.strategy == "voting":
+            nsfw_count = sum(1 for s in scores.values() if s >= threshold)
+            return nsfw_count / len(scores)
+            
+        return max(scores.values())
     @staticmethod
     def _merge_zones(results:List[Dict]) -> List[Dict]:
         zones = []
