@@ -1,10 +1,13 @@
-import asyncio
+import asyncio,io
 import logging
 from typing import Dict, Any, List, Literal
 from base import BaseDetector
 import time
-
+from PIL import Image
+from concurrent.futures import ThreadPoolExecutor
 logger = logging.getLogger(__name__)
+
+MAX_INPUT_SIZE = 1080
 
 class HybridDetector(BaseDetector):
     def __init__(self,
@@ -15,6 +18,7 @@ class HybridDetector(BaseDetector):
         self.detectors = detectors
         self.strategy = strategy
         self.fallback_detector = fallback_detector
+        self._executor = ThreadPoolExecutor(max_workers=len(detectors),thread_name_prefix='nsfw_inf')
         if weights:
             self.weights = weights
         else:
@@ -26,6 +30,7 @@ class HybridDetector(BaseDetector):
     @property
     def name(self) ->str:
         return 'hybrid_detector'
+    
     def _aggregate(self, results: List[Dict], threshold: float) -> float:
         if not results:
             return 0.0
@@ -48,6 +53,16 @@ class HybridDetector(BaseDetector):
             
         return max(scores.values())
     @staticmethod
+    def _fast_resize(image_bytes:bytes) ->bytes:
+        img = Image.open(io.BytesIO(image_bytes))
+        if max(img.size) < MAX_INPUT_SIZE:
+            return image_bytes
+        else:
+            img.thumbnail((MAX_INPUT_SIZE,MAX_INPUT_SIZE),Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf,format='JPEG',quality=85) #JPEG is easier for ONNX models
+            return buf.getvalue()
+    @staticmethod
     def _merge_zones(results:List[Dict]) -> List[Dict]:
         zones = []
         for r in results:
@@ -58,10 +73,12 @@ class HybridDetector(BaseDetector):
     async def predict(self,images_bytes:bytes,threshold:float=0.5) -> Dict[str, Any]:
         self._validate_inputs(image_bytes=images_bytes,threshold=threshold)
         start = time.perf_counter()
+        optimized_bytes = await asyncio.to_thread(self._fast_resize,images_bytes)
+        tasks = [asyncio.to_thread(det.predict,optimized_bytes,threshold,executor=self._executor) for det in self.detectors]
         results:List[Dict[str,Any]] = []
         errors:List[Dict[str,str]] = [] 
         
-        tasks = [asyncio.to_thread(det.predict,images_bytes,threshold) for det in self.detectors]
+        #tasks = [asyncio.to_thread(det.predict,images_bytes,threshold) for det in self.detectors]
         raw_outputs = await asyncio.gather(*tasks,return_exceptions=True)
         
         for det, out in zip(self.detectors,raw_outputs):

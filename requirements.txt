@@ -1,7 +1,4 @@
-torchvision>=0.27.0
-torch>=2.12.0
 onnxruntime>=1.17.0
-transformers>=4.38.0
 Pillow>=10.0.0
 numpy>=1.24.0
 nudenet>=3.4.2
@@ -10,3 +7,7 @@ python-multipart>=0.0.32
 pydantic_settings>=2.14.1
 redis>=8.0.0
 file>=1.2.0
+opennsfw2>=0.18.0
+keras>=3.15.0
+tensorflow>=2.21.0
+tf2onnx>=1.17.0

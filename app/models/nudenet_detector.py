@@ -2,6 +2,7 @@
 import time, logging, io
 from typing import Any, Dict, List
 import numpy as np
+import onnxruntime as ort
 from PIL import Image
 from nudenet import NudeDetector
 from base import BaseDetector
@@ -21,12 +22,20 @@ MAX_SEVERITY = max(ZONE_SEVERITY.values(), default=1.0)
 class NudeNetDetector(BaseDetector):
     def __init__(self, model_path: str | None = None):
         self._detector = NudeDetector(model_path=model_path)
+        sess_opt = ort.SessionOptions()
+        sess_opt.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        sess_opt.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+        sess_opt.inter_op_num_threads = 1 #Making sure  there won't unparalled operations
+        sess_opt.intra_op_num_threads = 2 # 2 Threads for two models is quite balanced
+        sess_opt.enable_cpu_mem_arena = False #Less alocation, better GC
+        sess_opt.add_session_config_entry('session.intra_op.allow_spinning','0') #is more economic-friendly for CPU idle
+        self._session = ort.InferenceSession(path_or_bytes=model_path,sess_options=sess_opt,providers=['OpenVINOExecutionProvider'])
 
     @property
     def name(self) -> str:
         return "nudenet_detector"
 
-    def predict(self, image_bytes: bytes, threshold: float = 0.5) -> Dict[str, Any]:
+    def predict(self, image_bytes: bytes, threshold: float = 0.5,executor=None) -> Dict[str, Any]:
         self._validate_inputs(image_bytes, threshold)
         start = time.perf_counter()
         

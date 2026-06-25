@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from config import settings
-from models.vit_detector import VitClassifier
+from app.models.opennsfw2_detector import OpenNSFW2Detector
 from models.nudenet_detector import NudeNetDetector
 from models.hybrid import HybridDetector
 from service.cache import CacheService

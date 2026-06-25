@@ -1,25 +1,26 @@
 import asyncio
-from vit_detector import VitClassifier
+from opennsfw2_detector import OpenNSFW2Detector
 from nudenet_detector import NudeNetDetector
 from hybrid import HybridDetector
 
 async def main():
     nudenet = NudeNetDetector(model_path="data/models/nudenet/nudenet.onnx")
-    vit = VitClassifier(model_path="data/models/vit/quantized_model.onnx")
+    opennsfw2 = OpenNSFW2Detector()
     
     hybrid = HybridDetector(
-        detectors=[nudenet, vit],
-        strategy="weighted",  # или "weighted", "voting"
-        weights={"nudenet_detector": 0.6, "vit_classifier": 0.4}
+        detectors=[nudenet, opennsfw2],
+        strategy="max",  # или "weighted", "voting"
+        weights={"nudenet_detector": 0.4, "opennsfw2_detector": 0.6}
     )
     
-    with open("test_images/edge_art.jpg", "rb") as f:
+    with open("test_images/porn.jpg", "rb") as f:
         result = await hybrid.predict(f.read(), threshold=0.5)
         
     print(f"✅ Hybrid → score: {result['score']}, label: {result['label']}")
     print(f"   latency: {result['latency_ms']} ms")
     print(f"   sources: {result['meta']['sources']}")
     print(f"   zones: {len(result['meta']['detected_zones'])} found")
+    print(f'Detected zones: {result['meta']['detected_zones']}')
     print(f'Errors: {result['meta']['errors']}')
 
 if __name__ == "__main__":

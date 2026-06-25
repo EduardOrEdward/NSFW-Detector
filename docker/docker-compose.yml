@@ -1,43 +1,41 @@
-version: '3.0'
-
+version: '3.8'
 services:
   nsfw-api:
     build:
-      context:''
-      dockerfile:'Dockerfile'
-    conteiner_name: nsfw-detector-api
+      context: .
+      dockerfile: Dockerfile
+    container_name: nsfw-detector-api
     restart: unless-stopped
     ports:
-      -'8000:8000'
+      - "8000:8000"
     env_file:
-      -'../.env'
-    enviroment:
+      - .env
+    environment:
       - REDIS_URL=redis://redis:6379/0
-      - UNICORN_WORKERS=4
+      - UVICORN_WORKERS=4
     depends_on:
       redis:
         condition: service_healthy
+    networks:
+      - nsfw-network
     deploy:
       resources:
         limits:
           cpus: '4.0'
           memory: 4G
-        reservation:
+        reservations:
           cpus: '1.0'
           memory: 1G
-    networks:
-      -nsfw-network
-  
 
   redis:
     image: redis:7-alpine
-    conteiner_name: nsfw-redis
+    container_name: nsfw-redis
     restart: unless-stopped
-    command: radis-server --appendoly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
-    volums:
-      -redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
     healthcheck:
-      test: ['CMD','redis-cli','ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -46,11 +44,11 @@ services:
         limits:
           memory: 512M
     networks:
-      -nsfw-network
+      - nsfw-network
 
-volums:
+volumes:
   redis-data:
 
 networks:
-  nsfw-detector:
+  nsfw-network:
     driver: bridge

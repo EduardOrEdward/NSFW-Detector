@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*/test_vit.py
 # C extensions
 *.so
 test_images
