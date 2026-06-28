@@ -1,7 +1,7 @@
 import asyncio,io
 import logging
 from typing import Dict, Any, List, Literal
-from base import BaseDetector
+from app.models.base import BaseDetector
 import time
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor

@@ -1,11 +1,11 @@
 import logging
-import time
+#import time
 from typing import Dict, Any,Optional
 from fastapi import APIRouter,UploadFile,File,HTTPException,Query,Depends,Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel,Field
 
-from service.validation import validate_image
+from app.service.validation import validate_image
 
 router = APIRouter(tags=['Detection'])
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class DetectionSource(BaseModel):
     nudenet_detector:Optional[float] = Field(None,description='NudeNet score -> [0,1]')
-    vit_detector:Optional[float] = Field(None,description='ViT score -> [0,1]')
+    opennsfw2_detector:Optional[float] = Field(None,description='OpeNSFW2 score -> [0,1]')
     
 
 class DetectionResponse(BaseModel):
@@ -84,11 +84,11 @@ async def detect_nsfw(
         'cached':False,
         'sources':DetectionSource(
             nudenet_detector=result['meta']['sources'].get('nudenet_detector'),
-            vit_detector=result['meta']['sources'].get('vit_clasifier')
+            opennsfw2_detector=result['meta']['sources'].get('vit_clasifier')
         ),
         'detecter_zones':result['meta'].get('detected_zones',[])
     }
-    logger.info(f'[{request_id}] Detection complete. Label: {response_data['label']}, Score: {response_data["score"]}, Latency_ms: {response_data['latency_ms']}ms')
+    logger.info(f"[{request_id}] Detection complete. Label: {response_data['label']}, Score: {response_data["score"]}, Latency_ms: {response_data['latency_ms']}ms")
     return response_data
 
 '''

@@ -12,11 +12,11 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/"
     DEBUG:bool = False
     NUDENET_MODEL_PATH: str = "data/models/nudenet_v3.onnx"
-    VIT_MODEL_PATH: str = "data/models/quanited_model.onnx"
+    #VIT_MODEL_PATH: str = "data/models/quanited_model.onnx"
     MODEL_PROVIDER: Literal["CPU", "GPU"] = "CPU"
     HYBRID_STRATEGY: Literal["max", "weighted", "voting"] = "weighted"
     NUDENET_WEIGHT: float = 0.4
-    VIT_WEIGHT: float = 0.6
+    OPENNSFW2_WEIGHT: float = 0.6
     DEFAULT_THRESHOLD: float = 0.5
 
     REDIS_URL: str = "redis://redis:6379/0"
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
         '''Making the vocabulary of the weights, using BaseDetector'''
         return {
             'nudenet_detector':self.NUDENET_WEIGHT,
-            'vit_detector':self.VIT_WEIGHT
+            'vit_detector':self.OPENNSFW2_WEIGHT
         }
 
 settings = Settings()

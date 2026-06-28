@@ -6,7 +6,7 @@ from PIL import Image
 #from transformers import AutoImageProcessor
 from typing import Any, Dict
 import onnxruntime as ort
-from base import BaseDetector
+from app.models.base import BaseDetector
 import opennsfw2
 logger = logging.getLogger(__name__)
 

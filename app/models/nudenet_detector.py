@@ -5,7 +5,7 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 from nudenet import NudeDetector
-from base import BaseDetector
+from app.models.base import BaseDetector
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class NudeNetDetector(BaseDetector):
         sess_opt.intra_op_num_threads = 2 # 2 Threads for two models is quite balanced
         sess_opt.enable_cpu_mem_arena = False #Less alocation, better GC
         sess_opt.add_session_config_entry('session.intra_op.allow_spinning','0') #is more economic-friendly for CPU idle
-        self._session = ort.InferenceSession(path_or_bytes=model_path,sess_options=sess_opt,providers=['OpenVINOExecutionProvider'])
+        self._session = ort.InferenceSession(path_or_bytes=model_path,sess_options=sess_opt,providers=['CPUExecutionProvider'])
 
     @property
     def name(self) -> str:

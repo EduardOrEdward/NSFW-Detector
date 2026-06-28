@@ -1,17 +1,29 @@
 # app/main.py
-import logging
+import logging,os,sys
+#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+#os.environ['TF_ENABLE_ONEDNN_OPTS']='0'
+#os.environ['TF_AUTOTUNE_THRESHOLD'] ='2'
+#os.environ['ORT_LOG_SEVERITY_LEVEL'] ='3'
+sys.path.append('/app')
+
+import warnings
+warnings.filterwarnings('ignore')
+for name in ['tensorflow', 'keras', 'onnxruntime', 'transformers', 'absl', 'h5py']:
+    logging.getLogger(name).setLevel(logging.CRITICAL)
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+logging.getLogger('keras').setLevel(logging.ERROR)
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from config import settings
+from app.config import settings
 from app.models.opennsfw2_detector import OpenNSFW2Detector
-from models.nudenet_detector import NudeNetDetector
-from models.hybrid import HybridDetector
-from service.cache import CacheService
-from api.v1 import predict, health
+from app.models.nudenet_detector import NudeNetDetector
+from app.models.hybrid import HybridDetector
+from app.service.cache import CacheService
+from app.api.v1 import predict, health
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -42,12 +54,12 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Initializing Hybrid NSFW Pipeline...")
     try:
         nudenet = NudeNetDetector(model_path=settings.NUDENET_MODEL_PATH)
-        vit = VitClassifier(model_path=settings.VIT_MODEL_PATH, provider=settings.MODEL_PROVIDER)
+        vit = OpenNSFW2Detector()
         
         app.state.detector = HybridDetector(
             detectors=[nudenet, vit],
             strategy=settings.HYBRID_STRATEGY,
-            weights={"nudenet_detector": settings.NUDENET_WEIGHT, "vit_classifier": settings.VIT_WEIGHT}
+            weights={"nudenet_detector": settings.NUDENET_WEIGHT, "OpenNSFW2": settings.OPENNSFW2_WEIGHT}
         )
         
         app.state.cache = CacheService(redis_url=settings.REDIS_URL, ttl=settings.CACHE_TTL)

@@ -1,0 +1,4 @@
+{
+    "python.terminal.useEnvFile": true,
+    "containers.composeCommand": "docker-compose"
+}
