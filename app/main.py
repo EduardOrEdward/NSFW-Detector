@@ -51,7 +51,7 @@ class RapidAPIMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Initializing Hybrid NSFW Pipeline...")
+    logger.info("Initializing Hybrid NSFW Pipeline...")
     try:
         nudenet = NudeNetDetector(model_path=settings.NUDENET_MODEL_PATH)
         vit = OpenNSFW2Detector()
@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
         
         app.state.cache = CacheService(redis_url=settings.REDIS_URL, ttl=settings.CACHE_TTL)
         await app.state.cache.connect()
-        logger.info("✅ Models loaded & Redis connected. Ready.")
+        logger.info("Models loaded & Redis connected. Ready.")
     except Exception as e:
         logger.error(f"The Initialization failed: {e}", exc_info=True)
         raise

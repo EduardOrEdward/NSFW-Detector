@@ -88,7 +88,7 @@ async def detect_nsfw(
         ),
         'detecter_zones':result['meta'].get('detected_zones',[])
     }
-    logger.info(f"[{request_id}] Detection complete. Label: {response_data['label']}, Score: {response_data["score"]}, Latency_ms: {response_data['latency_ms']}ms")
+    logger.info(f"[{request_id}] Detection complete. Label: {response_data['label']}, Score: {response_data['score']}, Latency_ms: {response_data['latency_ms']}ms")
     return response_data
 
 '''

@@ -1,15 +1,16 @@
-version: '3.8'
 services:
   nsfw-api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes: 
+      - ../data/models/:/app/data/models
     container_name: nsfw-detector-api
     restart: unless-stopped
     ports:
       - "8000:8000"
     env_file:
-      - ../.env
+      - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
       - TF_CPP_MIN_LOG_LEVEL=3
@@ -22,11 +23,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4.0'
-          memory: 4G
+          cpus: '1.8'
+          memory: 5G
         reservations:
           cpus: '1.0'
-          memory: 1G
+          memory: 2G
 
   redis:
     image: redis:7-alpine
