@@ -33,9 +33,9 @@ ENV VENV_PATH="$VIRTUAL_ENV/bin:$VENV_PATH"
 
 
 RUN useradd -m -s /bin/bash appuser
-COPY requirements.txt .
+COPY requirements.txt ./
 RUN pip install --no-cache --upgrade pip && \
-    pip install --no-cache uvicorn==0.24.0 &&\
+    pip install --no-cache uvicorn==0.24.0 && \
     pip install --no-cache -r requirements.txt
 
 COPY app/ ./app/
@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libglib2.0-0 && rm -rf /var/lib/apt/lists/*
 COPY --chown=appuser:appuser ./app/main.py ./app/
 COPY --chown=appuser:appuser app/ ./app/
-COPY --chown=appuser:appuser ./data/models ./app/data/models
+COPY --chown=appuser:appuser ./data/models data/models
 
 
 

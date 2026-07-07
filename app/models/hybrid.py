@@ -4,7 +4,6 @@ from typing import Dict, Any, List, Literal
 from app.models.base import BaseDetector
 import time
 from PIL import Image
-from concurrent.futures import ThreadPoolExecutor
 logger = logging.getLogger(__name__)
 
 MAX_INPUT_SIZE = 1080
@@ -18,7 +17,6 @@ class HybridDetector(BaseDetector):
         self.detectors = detectors
         self.strategy = strategy
         self.fallback_detector = fallback_detector
-        self._executor = ThreadPoolExecutor(max_workers=len(detectors),thread_name_prefix='nsfw_inf')
         if weights:
             self.weights = weights
         else:
@@ -74,7 +72,7 @@ class HybridDetector(BaseDetector):
         self._validate_inputs(image_bytes=images_bytes,threshold=threshold)
         start = time.perf_counter()
         optimized_bytes = await asyncio.to_thread(self._fast_resize,images_bytes)
-        tasks = [asyncio.to_thread(det.predict,optimized_bytes,threshold,executor=self._executor) for det in self.detectors]
+        tasks = [asyncio.to_thread(det.predict,optimized_bytes,threshold) for det in self.detectors]
         results:List[Dict[str,Any]] = []
         errors:List[Dict[str,str]] = [] 
         

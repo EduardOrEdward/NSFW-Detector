@@ -9,9 +9,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "NSFW Detector API"
     APP_ENV: str = "production"
     APP_VERSION:str = '1.0.0'
-    API_PREFIX: str = "/"
+    API_PREFIX: str = "/v1"
     DEBUG:bool = False
-    NUDENET_MODEL_PATH: str = "data/models/nudenet_v3.onnx"
+    NUDENET_MODEL_PATH: str = "data/models/nudenet/nudenet.onnx"
     #VIT_MODEL_PATH: str = "data/models/quanited_model.onnx"
     MODEL_PROVIDER: Literal["CPU", "GPU"] = "CPU"
     HYBRID_STRATEGY: Literal["max", "weighted", "voting"] = "weighted"

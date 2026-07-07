@@ -1,8 +1,7 @@
 import logging
 #import time
 from typing import Dict, Any,Optional
-from fastapi import APIRouter,UploadFile,File,HTTPException,Query,Depends,Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter,UploadFile,File,HTTPException,Request
 from pydantic import BaseModel,Field
 
 from app.service.validation import validate_image

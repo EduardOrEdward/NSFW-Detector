@@ -37,7 +37,7 @@ class RapidAPIMiddleware(BaseHTTPMiddleware):
                 return JSONResponse(status_code=401, content={"detail": "Invalid or missing x-rapidapi-key"})
         
         # 2. Rate Limit
-        if request.app.state.cache and request.app.state.cache._is_ready:
+        if request.app.state.cache:
             client_id = request.headers.get(settings.RAPIDAPI_KEY_HEADER) or request.client.host
             allowed = await request.app.state.cache.check_rate_limit(
                 identifier=client_id,
@@ -54,12 +54,12 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing Hybrid NSFW Pipeline...")
     try:
         nudenet = NudeNetDetector(model_path=settings.NUDENET_MODEL_PATH)
-        vit = OpenNSFW2Detector()
+        opennsfw2 = OpenNSFW2Detector()
         
         app.state.detector = HybridDetector(
-            detectors=[nudenet, vit],
+            detectors=[opennsfw2, nudenet],
             strategy=settings.HYBRID_STRATEGY,
-            weights={"nudenet_detector": settings.NUDENET_WEIGHT, "OpenNSFW2": settings.OPENNSFW2_WEIGHT}
+            weights={"nudenet_detector": settings.NUDENET_WEIGHT, "opennsfw2_detector": settings.OPENNSFW2_WEIGHT}
         )
         
         app.state.cache = CacheService(redis_url=settings.REDIS_URL, ttl=settings.CACHE_TTL)

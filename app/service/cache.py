@@ -1,10 +1,10 @@
-import hashlib
+import hashlib,time
 import json
 import logging
 from typing import Dict, Any, Optional
 import redis.asyncio as redis
 from redis.exceptions import RedisError
-
+from app.config import settings
 logger = logging.getLogger(__name__)
 
 class CacheService:
@@ -12,13 +12,15 @@ class CacheService:
         self.redis_url = redis_url
         self.ttl = ttl
         self._redis: Optional[redis.Redis] = None
+        self._rate_limit_window=settings.RATE_LIMIT_WINDOW
+        self._rate_limit = settings.RATE_LIMIT
     async def connect(self) -> None:
         '''Connection to Redis, activated once'''
         try:
             self._redis = redis.from_url(
                 self.redis_url,
                 encoding='utf-8',
-                decode_response=True,
+                decode_responses=True,
                 health_check_interval=30,
                 )
             await self._redis.ping()
@@ -75,4 +77,29 @@ class CacheService:
             return
         except RedisError as e:
             logging.warning(f'Redis set error: {e}')
-        return 
+        return
+    def _make_rate_key(self,identifier:str)->str:
+        return f"identifier:{identifier}"
+    async def check_rate_limit(self,identifier:str,limit=settings.RATE_LIMIT,window=settings.RATE_LIMIT_WINDOW)->bool:
+        if not self._redis or not self._rate_limit:
+            return True
+        try:
+            key = self._make_rate_key(identifier)
+            now = time.time()
+            window_start=now-window
+            
+            await self._redis.zremrangebyscore(key,0,window_start)
+            current_count = await self._redis.zcard(key)
+            if current_count >= self._rate_limit:
+                logger.warning(f"Rate limit exceed for {identifier} ({current_count}/{self._rate_limit})")
+                return False
+            await self._redis.zadd(key,{f'{now}':now})
+            await self._redis.expire(key,self._rate_limit+1)
+            logger.debug(f"Rate limit OK for {identifier} ({current_count + 1}/{self._rate_limit})")
+            return True
+        except Exception as e:
+            logger.error(f'Rate limit check failed: {e}')
+            return True
+    @property
+    def is_healthy(self)->bool:
+        return self._redis is not None
