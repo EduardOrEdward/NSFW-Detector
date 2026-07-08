@@ -6,7 +6,7 @@ import redis.asyncio as redis
 from redis.exceptions import RedisError
 from app.config import settings
 logger = logging.getLogger(__name__)
-
+from app.api.v1.predict import DetectionSource
 class CacheService:
     def __init__(self, redis_url='redis://localhost:6379/0',ttl:int=86400):
         self.redis_url = redis_url
@@ -44,6 +44,7 @@ class CacheService:
         Trying to get dict of the cache
         If there's no cache - return None
         '''
+        start = time.perf_counter()
         if not self._redis:
             return None
         key = self._get_cache_key(image_bytes)
@@ -53,7 +54,21 @@ class CacheService:
                 logger.debug(f'Cache HIT for key: {key[:16]}...')
                 result = json.loads(cached_data)
                 result['cached'] = True
-                return result
+                result['latency_ms'] = round((time.perf_counter()-start)*1000,4)
+                return {
+                    'score':result['score'],
+                    'label':result['label'],
+                    'latency_ms':result['latency_ms'],
+                    'cached':result['cached'],
+                    'meta':{
+                        'sources':{
+                            'nudenet_detector':result['meta']['sources'].get('nudenet_detector') or 0.0,
+                            'opennsfw2_detector':result['meta']['sources'].get('opennsfw2_detector') or 0.0
+                        },
+                        'strategy':settings.HYBRID_STRATEGY
+                    },
+                    'detecter_zones':result['meta'].get('detected_zones',[])
+                }
         except RedisError as e:
             logging.warning(f'Redis get error accused: {e}')
         except json.JSONDecodeError as e:
